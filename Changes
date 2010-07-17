@@ -1,5 +1,13 @@
 Revision history for WWW-Notifo
 
+0.06  2010-Jul-17
+
+      - Remove dependency on Test::Deep, Getopt::Long
+
+0.05  2010-Jul-17
+
+      - Documenation fixes
+
 0.04  2010-Jul-17    
 
       - Clarify error handling documentation
