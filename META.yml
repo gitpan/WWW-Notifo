@@ -13,7 +13,7 @@ name: WWW-Notifo
 provides:
   WWW::Notifo:
     file: lib/WWW/Notifo.pm
-    version: 0.01
+    version: 0.02
 requires:
   Getopt::Long: 0
   JSON: 2.00
@@ -24,4 +24,4 @@ requires:
   accessors::ro: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.01
+version: 0.02
