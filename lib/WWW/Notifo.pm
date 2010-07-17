@@ -15,11 +15,11 @@ WWW::Notifo - Unoffical notifo.com API
 
 =head1 VERSION
 
-This document describes WWW::Notifo version 0.03
+This document describes WWW::Notifo version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -62,7 +62,7 @@ From L<http://notifo.com/>:
 
 use constant API => 'https://api.notifo.com/v1';
 
-use accessors::ro qw( username secret );
+use accessors::ro qw( username secret last );
 
 BEGIN {
   my %meth = (
@@ -120,10 +120,11 @@ sub new {
 
 =head2 API Calls
 
-API calls provide access to the Notifo API. On success they return a
-reference to a hash containing the response from notifo.com. On API
-errors the hash will contain information about the error. On HTTP errors
-an exception will be thrown.
+API calls provide access to the Notifo API.
+
+On success they return a reference to a hash containing the response
+from notifo.com. On errors an exception will be thrown. In the case of
+an error the response hash can be retrieved by calling C<last>.
 
 =head3 C<< subscribe_user >>
 
@@ -176,6 +177,11 @@ calling C<api>. For example, the above send_notification example can also be wri
     uri   => 'http://hexten.net/'
   );
 
+=head3 C<< last >>
+
+Get the most recent response (a hash ref). Useful in the case of an HTTP
+error (which throws an exception).
+
 =cut
 
 sub _api {
@@ -183,8 +189,11 @@ sub _api {
   my %args = _need( $need, $optional, @args );
   my $resp
    = $self->_ua->post( join( '/', API, $method ), Content => \%args );
+  $self->{last} = eval { JSON->new->decode( $resp->content ) };
+  my $err = $@;
   croak $resp->status_line if $resp->is_error;
-  return JSON->new->decode( $resp->content );
+  croak $err if $err;
+  return $self->last;
 }
 
 sub api {
