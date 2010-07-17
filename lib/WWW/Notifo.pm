@@ -11,15 +11,15 @@ use MIME::Base64;
 
 =head1 NAME
 
-WWW::Notifo - Unoffical notifo.com API
+WWW::Notifo - Interface to notifo.com notification service
 
 =head1 VERSION
 
-This document describes WWW::Notifo version 0.04
+This document describes WWW::Notifo version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -165,8 +165,9 @@ URL is used.
 =head3 C<< api >>
 
 API entry points other than C<subscribe_user> and C<send_notification>
-(of which there are currently none) can be accessed directly by
-calling C<api>. For example, the above send_notification example can also be written as:
+(of which there are currently none) can be accessed directly by calling
+C<api>. For example, the above send_notification example can also be
+written as:
 
   my $resp = $notifo->api(
     'send_notification',
@@ -192,7 +193,7 @@ sub _api {
   $self->{last} = eval { JSON->new->decode( $resp->content ) };
   my $err = $@;
   croak $resp->status_line if $resp->is_error;
-  croak $err if $err;
+  croak $err if $err; # Only report errors parsing JSON we have a 200
   return $self->last;
 }
 
@@ -207,7 +208,7 @@ sub _make_ua {
   $ua->agent( join ' ', __PACKAGE__, $VERSION );
   $ua->add_handler(
     request_send => sub {
-      shift->header( 'Authorization' => $self->_auth_header );
+      shift->header( Authorization => $self->_auth_header );
     }
   );
   return $ua;
