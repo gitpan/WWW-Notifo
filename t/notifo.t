@@ -5,7 +5,7 @@ use warnings;
 
 use lib qw( t/lib );
 
-use Test::More tests => 20;
+use Test::More tests => 24;
 use JSON;
 use MIME::Base64;
 use WWW::Notifo;
@@ -34,8 +34,7 @@ sub check_request {
   is $req->method, 'POST', 'method is POST';
   my $auth = $req->header( 'Authorization' );
   like $auth, qr{^Basic\s+\S+$}, 'auth header';
-  $auth =~ m{^Basic\s+(\S+)};    # like tramples on $1
-  my $cred = $1;
+  my ( $cred ) = $auth =~ m{^Basic\s+(\S+)};    # like tramples on $1
   my ( $username, $secret ) = split /:/, MIME::Base64::decode( $cred ),
    2;
   is $username, $not->username, 'username';
@@ -68,9 +67,17 @@ sub decode_form {
   return $vars;
 }
 
-want_error { WWW::Notifo->new } qr{missing}i, 'missing args';
+want_error { WWW::Notifo->new } qr{Missing}i, 'missing args';
 want_error { WWW::Notifo->new( 'foo' ) } qr{a number}i,
  'odd number of args';
+want_error {
+  WWW::Notifo->new(
+    username => 'alice',
+    secret   => '123123',
+    foo      => 1
+  );
+}
+qr{Illegal}i, 'illegal args';
 
 ok my $not = WWW::Notifo->new(
   username => 'alice',
@@ -112,7 +119,7 @@ handle_request {
     msg   => 'Testing...',
     label => 'Test',
     title => 'Hoot',
-    url   => 'http://hexten.net/'
+    uri   => 'http://hexten.net/'
    },
    'content';
   return response {
@@ -127,7 +134,7 @@ is_deeply $not->send_notification(
   msg   => 'Testing...',
   label => 'Test',
   title => 'Hoot',
-  url   => 'http://hexten.net/'
+  uri   => 'http://hexten.net/'
  ),
  {
   status           => 'success',
@@ -135,6 +142,17 @@ is_deeply $not->send_notification(
   response_message => 'OK'
  },
  'send_notification';
+
+want_error {
+  $not->send_notification(
+    to      => 'hexten',
+    msg     => 'Testing...',
+    label   => 'Test',
+    caption => 'Hoot',
+    url     => 'http://hexten.net/'
+  );
+}
+qr{Illegal.+\bcaption\b.+\burl\b}i, 'illegal';
 
 # vim:ts=2:sw=2:et:ft=perl
 
