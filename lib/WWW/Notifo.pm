@@ -9,34 +9,38 @@ use Data::Dumper;
 use LWP::UserAgent;
 use MIME::Base64;
 
+use base qw( Exporter );
+
+our @EXPORT_OK = qw( notifo );
+
 =head1 NAME
 
 WWW::Notifo - Interface to notifo.com notification service
 
 =head1 VERSION
 
-This document describes WWW::Notifo version 0.07
+This document describes WWW::Notifo version 0.08
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 =head1 SYNOPSIS
 
-    use WWW::Notifo;
-    my $notifo = WWW::Notifo->new( username => 'foo', secret => 'xabc123' );
-   
-    # Subscribe a user...
-    my $status = $notifo->subscribe_user( username => 'bar' );
-    
-    # Send a notification
-    my $status = $notifo->send_notification(
-       to    => 'someone',
-       msg   => 'Hello!',
-       label => 'JAPH',
-       title => 'Boo',
-       uri   => 'http://example.com/'
-    );
+  use WWW::Notifo;
+  my $notifo = WWW::Notifo->new( username => 'foo', secret => 'xabc123' );
+  
+  # Subscribe a user...
+  my $status = $notifo->subscribe_user( username => 'bar' );
+  
+  # Send a notification
+  my $status = $notifo->send_notification(
+    to    => 'someone',
+    msg   => 'Hello!',
+    label => 'JAPH',
+    title => 'Boo',
+    uri   => 'http://example.com/'
+  );
 
 =head1 DESCRIPTION
 
@@ -76,10 +80,9 @@ BEGIN {
     },
   );
   for my $m ( keys %meth ) {
-    my $spec = $meth{$m};
     no strict 'refs';
     *{$m} = sub {
-      shift->_api( $m, @{$spec}{ 'required', 'optional' }, @_ );
+      shift->_api( $m, @{ $meth{$m} }{ 'required', 'optional' }, @_ );
     };
   }
 }
@@ -221,13 +224,38 @@ sub _make_ua {
 sub _auth_header {
   my $self = shift;
   return 'Basic '
-   . MIME::Base64::encode( join( ':', $self->username, $self->secret ),
-    '' );
+   . encode_base64( join( ':', $self->username, $self->secret ), '' );
 }
 
 sub _ua {
   my $self = shift;
   return $self->{_ua} ||= $self->_make_ua;
+}
+
+=head2 Procedural Interface
+
+The following convenience subroutine may be exported:
+
+=head3 C<< notifo >>
+
+Send a notification. 
+
+  notifo(
+    username  => 'alice',
+    secret    => 'x3122b4c4d3bad5e8d7397f0501b617ce60afe5d',
+    to        => 'hexten',
+    msg       => 'Testing...',
+    label     => 'Test',
+    title     => 'Hoot',
+    uri       => 'http://hexten.net/'
+  );
+
+=cut
+
+sub notifo {
+  my %opt = _need( [], undef, @_ );
+  return WWW::Notifo->new( map { $_ => delete $opt{$_} }
+     qw( username secret ) )->send_notification( %opt );
 }
 
 1;
